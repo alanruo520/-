@@ -1,0 +1,2457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>综合投诉质量管理交互式仪表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 顶部导航栏 */
+        .top-nav {
+            background: linear-gradient(135deg, #1a3a8f 0%, #2c5aa0 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .logo-icon {
+            font-size: 28px;
+            background-color: rgba(255, 255, 255, 0.2);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .date-display {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* 仪表板内容 */
+        .dashboard-content {
+            padding: 25px 30px;
+        }
+        
+        /* KPI卡片区域 */
+        .kpi-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #1a3a8f;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .kpi-title {
+            font-size: 14px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .kpi-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-trend {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .trend-up {
+            color: #28a745;
+        }
+        
+        .trend-down {
+            color: #dc3545;
+        }
+        
+        /* 数据输入部分 */
+        .data-input-section {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid #eaeaea;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eaeaea;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .section-subtitle {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .input-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .input-controls input, .input-controls select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            min-width: 150px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background-color: #1a3a8f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background-color: #142b6e;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-info {
+            background-color: #17a2b8;
+        }
+        
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+        
+        .input-table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .input-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        .input-table th, .input-table td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .input-table th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+        }
+        
+        .input-table input {
+            width: 70px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .input-table input:focus {
+            border-color: #1a3a8f;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 58, 143, 0.1);
+        }
+        
+        /* 图表容器 */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .chart-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eaeaea;
+            transition: transform 0.3s;
+        }
+        
+        .chart-box:hover {
+            transform: translateY(-3px);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-controls select {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+        
+        /* 月度分析容器 */
+        .monthly-analysis-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .month-analysis-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eaeaea;
+        }
+        
+        .month-analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .month-analysis-title {
+            font-size: 20px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .month-summary {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .analysis-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+            overflow-x: auto;
+        }
+        
+        .analysis-tab {
+            padding: 10px 20px;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .analysis-tab.active {
+            color: #1a3a8f;
+            border-bottom-color: #1a3a8f;
+            font-weight: 600;
+        }
+        
+        .analysis-tab:hover:not(.active) {
+            color: #1a3a8f;
+            background-color: rgba(26, 58, 143, 0.05);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .donut-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .donut-item {
+            flex: 1;
+            min-width: 250px;
+            text-align: center;
+        }
+        
+        .donut-chart-container {
+            position: relative;
+            height: 250px;
+        }
+        
+        .pareto-chart-container {
+            position: relative;
+            height: 350px;
+        }
+        
+        .pareto-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .pareto-legend-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .pareto-bar {
+            display: inline-block;
+            width: 15px;
+            height: 3px;
+            background-color: #1a3a8f;
+            margin-right: 5px;
+        }
+        
+        .pareto-line {
+            display: inline-block;
+            width: 15px;
+            height: 3px;
+            background-color: #dc3545;
+            margin-right: 5px;
+        }
+        
+        /* 数据表格部分 */
+        .data-table-section {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .data-table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        .data-table th {
+            background-color: #f1f5f9;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            color: #2c3e50;
+            border: 1px solid #dee2e6;
+            position: sticky;
+            top: 0;
+        }
+        
+        .data-table td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .data-table tr:hover {
+            background-color: #f0f5ff;
+        }
+        
+        .highlight-improvement {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .highlight-warning {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        /* 洞察与建议部分 */
+        .insights-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .insights-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eaeaea;
+        }
+        
+        .insights-title {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .insights-list {
+            padding-left: 20px;
+        }
+        
+        .insights-list li {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .recommendation-card {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
+            border-left: 5px solid #1a3a8f;
+        }
+        
+        .recommendation-list li {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #1a3a8f;
+        }
+        
+        /* 底部信息 */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 150px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .charts-container,
+            .monthly-analysis-container,
+            .insights-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .monthly-analysis-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-content {
+                padding: 15px;
+            }
+            
+            .top-nav {
+                padding: 15px;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .input-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .input-controls input,
+            .input-controls select,
+            .input-controls button {
+                width: 100%;
+            }
+            
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .chart-controls {
+                align-self: flex-start;
+            }
+        }
+        
+        /* 工具提示 */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 13px;
+            font-weight: normal;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* 加载指示器 */
+        .loader {
+            display: none;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #1a3a8f;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 导出按钮样式 */
+        .export-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+        
+        .category-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <div class="top-nav">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <h1>综合投诉质量管理仪表板</h1>
+                    <p class="section-subtitle">实时监控、分析投诉数据，识别关键质量问题</p>
+                </div>
+            </div>
+            <div class="nav-controls">
+                <div class="date-display">
+                    <i class="far fa-calendar-alt"></i> <span id="currentDate"></span>
+                </div>
+                <button class="btn btn-info" id="importDataBtn">
+                    <i class="fas fa-file-import"></i> 导入数据
+                </button>
+                <button class="btn btn-success" id="exportReportBtn">
+                    <i class="fas fa-file-export"></i> 导出报告
+                </button>
+                <button class="btn btn-warning" id="helpBtn">
+                    <i class="fas fa-question-circle"></i> 帮助
+                </button>
+            </div>
+        </div>
+        
+        <!-- 仪表板内容 -->
+        <div class="dashboard-content">
+            <!-- KPI指标卡片 -->
+            <div class="kpi-section">
+                <div class="kpi-card">
+                    <div class="kpi-title">总投诉次数</div>
+                    <div class="kpi-value" id="totalComplaints">0</div>
+                    <div class="kpi-trend">
+                        <span id="complaintsTrend" class="trend-up">+0%</span> 较上月
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">总问题盒数</div>
+                    <div class="kpi-value" id="totalBoxes">0</div>
+                    <div class="kpi-trend">
+                        <span id="boxesTrend" class="trend-up">+0%</span> 较上月
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">主要问题类别</div>
+                    <div class="kpi-value" id="topCategory">-</div>
+                    <div class="kpi-trend">
+                        <span id="categoryPercentage">0%</span> 占比
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">问题改善率</div>
+                    <div class="kpi-value" id="improvementRate">0%</div>
+                    <div class="kpi-trend">
+                        <span id="improvementTrend" class="trend-up">+0%</span> 较上月
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 数据输入部分 -->
+            <div class="data-input-section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">投诉数据输入与管理</h2>
+                        <p class="section-subtitle">输入或编辑各月份投诉数据，系统将自动更新所有分析图表</p>
+                    </div>
+                    <div class="export-options">
+                        <button class="btn btn-secondary btn-small" id="addMonthBtn">
+                            <i class="fas fa-plus"></i> 添加月份
+                        </button>
+                        <button class="btn btn-success btn-small" id="updateChartsBtn">
+                            <i class="fas fa-sync-alt"></i> 更新图表
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="input-controls">
+                    <div>
+                        <label for="monthInput">月份名称：</label>
+                        <input type="text" id="monthInput" placeholder="如：12月份" value="12月份">
+                    </div>
+                    <div>
+                        <label for="dataType">数据类型：</label>
+                        <select id="dataType">
+                            <option value="times">次数数据</option>
+                            <option value="boxes">盒数数据</option>
+                        </select>
+                    </div>
+                    <button class="btn" id="addMonthDataBtn">
+                        <i class="fas fa-plus-circle"></i> 添加月份数据
+                    </button>
+                    <button class="btn btn-secondary" id="resetDataBtn">
+                        <i class="fas fa-undo"></i> 重置为示例数据
+                    </button>
+                </div>
+                
+                <div class="month-tabs" id="monthTabs"></div>
+                
+                <div class="input-table-container">
+                    <table class="input-table" id="dataInputTable">
+                        <thead>
+                            <tr>
+                                <th>月份</th>
+                                <th>类型</th>
+                                <th>标签脱落</th>
+                                <th>挤压变形</th>
+                                <th>发酸发黑胀气</th>
+                                <th>异物</th>
+                                <th>封口不良</th>
+                                <th>少盒数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataInputBody">
+                            <!-- 数据行将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 趋势分析图表 -->
+            <div class="section-header">
+                <h2 class="section-title">投诉趋势分析</h2>
+                <div class="chart-controls">
+                    <select id="trendDataType">
+                        <option value="times">次数数据</option>
+                        <option value="boxes">盒数数据</option>
+                    </select>
+                    <select id="trendChartType">
+                        <option value="bar">柱状图</option>
+                        <option value="line">折线图</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <div class="chart-title">月度投诉趋势分析</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <div class="chart-title">投诉类别对比分析</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 月度分析 -->
+            <div class="section-header">
+                <h2 class="section-title">月度详细分析</h2>
+                <p class="section-subtitle">选择月份查看详细分析，包括环形图分布和柏拉图分析</p>
+            </div>
+            
+            <div class="monthly-analysis-container" id="monthlyAnalysisContainer">
+                <!-- 月度分析卡片将通过JavaScript动态生成 -->
+                <div class="no-data" id="noDataMessage">暂无数据，请在表格中输入数据后点击"更新图表"</div>
+            </div>
+            
+            <!-- 数据汇总表格 -->
+            <div class="data-table-section">
+                <div class="section-header">
+                    <h2 class="section-title">投诉数据汇总表</h2>
+                    <button class="btn btn-secondary btn-small" id="exportTableBtn">
+                        <i class="fas fa-download"></i> 导出表格
+                    </button>
+                </div>
+                <div class="data-table-container">
+                    <table class="data-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th rowspan="2">月份</th>
+                                <th rowspan="2">类型</th>
+                                <th colspan="6">问题类别</th>
+                                <th rowspan="2">总计</th>
+                            </tr>
+                            <tr>
+                                <th>标签脱落</th>
+                                <th>挤压变形</th>
+                                <th>发酸发黑胀气</th>
+                                <th>异物</th>
+                                <th>封口不良</th>
+                                <th>少盒数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                            <!-- 数据行将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 洞察与建议 -->
+            <div class="insights-section">
+                <div class="insights-card">
+                    <h3 class="insights-title">
+                        <i class="fas fa-lightbulb"></i> 关键洞察
+                    </h3>
+                    <ul class="insights-list" id="insightsList">
+                        <!-- 洞察内容将通过JavaScript动态生成 -->
+                    </ul>
+                </div>
+                
+                <div class="insights-card recommendation-card">
+                    <h3 class="insights-title">
+                        <i class="fas fa-clipboard-check"></i> 改进建议
+                    </h3>
+                    <ul class="insights-list recommendation-list" id="recommendationsList">
+                        <!-- 建议内容将通过JavaScript动态生成 -->
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 加载指示器 -->
+            <div class="loader" id="loader"></div>
+            
+            <footer>
+                <p>综合投诉质量管理仪表板 | 版本 2.0 | 最后更新：<span id="currentDateFooter"></span></p>
+                <p>© 2023 质量管理系统 | 使用Chart.js可视化 | 技术支持：质量分析团队</p>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- 导入数据模态框 -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">导入投诉数据</h3>
+                <button class="close-modal" id="closeImportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>您可以通过以下格式导入多个月份的投诉数据：</p>
+                <div class="form-group">
+                    <label for="jsonData">JSON数据格式：</label>
+                    <textarea id="jsonData" placeholder='{
+  "12月份": {
+    "times": [5, 4, 2, 1, 3, 2],
+    "boxes": [10, 8, 4, 2, 6, 5]
+  },
+  "1月份": {
+    "times": [4, 3, 1, 0, 2, 1],
+    "boxes": [8, 6, 2, 0, 4, 3]
+  }
+}'></textarea>
+                </div>
+                <p class="section-subtitle">或上传CSV/Excel文件（需符合指定格式）</p>
+                <div class="form-group">
+                    <label for="fileUpload">选择文件：</label>
+                    <input type="file" id="fileUpload" accept=".csv,.xlsx,.xls">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelImportBtn">取消</button>
+                <button class="btn btn-success" id="confirmImportBtn">导入数据</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 帮助模态框 -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">仪表板使用帮助</h3>
+                <button class="close-modal" id="closeHelpModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>主要功能</h4>
+                <ul class="insights-list">
+                    <li><strong>数据输入</strong>：在表格中直接输入或编辑各月份投诉数据</li>
+                    <li><strong>趋势分析</strong>：查看投诉次数和盒数的月度变化趋势</li>
+                    <li><strong>环形图分布</strong>：查看每月各类投诉的分布比例</li>
+                    <li><strong>柏拉图分析</strong>：识别关键质量问题（80/20法则）</li>
+                    <li><strong>数据导出</strong>：导出分析报告和图表</li>
+                </ul>
+                
+                <h4>操作指南</h4>
+                <ul class="insights-list">
+                    <li>点击"添加月份"按钮添加新的月份数据</li>
+                    <li>在表格中直接编辑数据，然后点击"更新图表"</li>
+                    <li>点击月份标签切换查看不同月份的分析</li>
+                    <li>在图表上方选择数据类型和图表类型</li>
+                    <li>点击"导出报告"生成完整的质量分析报告</li>
+                </ul>
+                
+                <h4>分析说明</h4>
+                <ul class="insights-list">
+                    <li><strong>柏拉图分析</strong>：用于识别最重要的质量问题，遵循80/20法则</li>
+                    <li><strong>趋势分析</strong>：帮助监控投诉变化趋势，及时发现异常</li>
+                    <li><strong>关键洞察</strong>：系统自动生成基于数据的质量改进建议</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="closeHelpBtn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 设置当前日期
+        const now = new Date();
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', { 
+            year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+        });
+        document.getElementById('currentDateFooter').textContent = now.toLocaleDateString('zh-CN');
+        
+        // 定义颜色方案
+        const categoryColors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'
+        ];
+        
+        const categoryNames = [
+            '标签脱落', '挤压变形', '发酸发黑胀气', '异物', '封口不良', '少盒数'
+        ];
+        
+        // 初始数据
+        let allData = {
+            "10月份": {
+                times: [3, 2, 2, 1, 2, 3],
+                boxes: [6, 6, 2, 1, 2, 7]
+            },
+            "11月份": {
+                times: [6, 5, 3, 0, 0, 0],
+                boxes: [22, 11, 7, 0, 0, 0]
+            }
+        };
+        
+        // 图表实例存储
+        let chartInstances = {
+            trendChart: null,
+            categoryChart: null,
+            donutCharts: {},
+            paretoCharts: {}
+        };
+        
+        // 当前选中的月份
+        let currentMonth = null;
+        
+        // 初始化页面
+        function initializePage() {
+            // 初始化数据表格
+            initializeDataTable();
+            
+            // 初始化KPI指标
+            updateKPIs();
+            
+            // 初始化图表
+            updateCharts();
+            
+            // 初始化事件监听器
+            setupEventListeners();
+            
+            // 显示欢迎消息
+            setTimeout(() => {
+                showNotification('欢迎使用投诉质量管理仪表板！请开始输入或导入数据。');
+            }, 1000);
+        }
+        
+        // 初始化数据表格
+        function initializeDataTable() {
+            const dataInputBody = document.getElementById('dataInputBody');
+            dataInputBody.innerHTML = '';
+            
+            // 为每个月份添加次数和盒数两行
+            for (const month in allData) {
+                // 次数行
+                const timesRow = document.createElement('tr');
+                timesRow.innerHTML = `
+                    <td>${month}</td>
+                    <td>次数</td>
+                    ${allData[month].times.map((value, index) => 
+                        `<td><input type="number" min="0" value="${value}" data-month="${month}" data-type="times" data-category="${index}"></td>`
+                    ).join('')}
+                    <td><button class="btn btn-danger btn-small" onclick="deleteMonth('${month}')"><i class="fas fa-trash"></i></button></td>
+                `;
+                dataInputBody.appendChild(timesRow);
+                
+                // 盒数行
+                const boxesRow = document.createElement('tr');
+                boxesRow.innerHTML = `
+                    <td>${month}</td>
+                    <td>盒数</td>
+                    ${allData[month].boxes.map((value, index) => 
+                        `<td><input type="number" min="0" value="${value}" data-month="${month}" data-type="boxes" data-category="${index}"></td>`
+                    ).join('')}
+                    <td></td>
+                `;
+                dataInputBody.appendChild(boxesRow);
+            }
+            
+            // 为输入框添加事件监听
+            document.querySelectorAll('#dataInputBody input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const month = this.getAttribute('data-month');
+                    const type = this.getAttribute('data-type');
+                    const category = parseInt(this.getAttribute('data-category'));
+                    const value = parseInt(this.value) || 0;
+                    
+                    allData[month][type][category] = value;
+                    
+                    // 自动更新图表
+                    updateCharts();
+                });
+            });
+            
+            // 更新月份标签
+            updateMonthTabs();
+        }
+        
+        // 更新月份标签
+        function updateMonthTabs() {
+            const monthTabs = document.getElementById('monthTabs');
+            monthTabs.innerHTML = '';
+            
+            const months = Object.keys(allData);
+            
+            months.forEach(month => {
+                const tab = document.createElement('div');
+                tab.className = `month-tab ${currentMonth === month ? 'active' : ''}`;
+                tab.textContent = month;
+                tab.addEventListener('click', () => {
+                    currentMonth = month;
+                    updateMonthTabs();
+                    updateMonthlyAnalysis();
+                });
+                monthTabs.appendChild(tab);
+            });
+            
+            // 如果当前月份未设置，设置为第一个月份
+            if (!currentMonth && months.length > 0) {
+                currentMonth = months[0];
+                updateMonthTabs();
+            }
+        }
+        
+        // 添加新月份
+        document.getElementById('addMonthDataBtn').addEventListener('click', function() {
+            const monthInput = document.getElementById('monthInput');
+            const dataType = document.getElementById('dataType').value;
+            const monthName = monthInput.value.trim();
+            
+            if (!monthName) {
+                showNotification('请输入月份名称', 'warning');
+                return;
+            }
+            
+            if (allData[monthName]) {
+                showNotification('该月份已存在', 'warning');
+                return;
+            }
+            
+            // 添加新月份数据
+            allData[monthName] = {
+                times: dataType === 'times' ? [1, 1, 1, 1, 1, 1] : [0, 0, 0, 0, 0, 0],
+                boxes: dataType === 'boxes' ? [1, 1, 1, 1, 1, 1] : [0, 0, 0, 0, 0, 0]
+            };
+            
+            // 更新数据表格
+            initializeDataTable();
+            
+            // 清空输入框
+            monthInput.value = '';
+            
+            // 更新图表
+            updateCharts();
+            
+            showNotification(`已成功添加${monthName}数据`, 'success');
+        });
+        
+        // 删除月份
+        function deleteMonth(month) {
+            if (Object.keys(allData).length <= 1) {
+                showNotification('至少需要保留一个月的数据', 'warning');
+                return;
+            }
+            
+            if (confirm(`确定要删除${month}的数据吗？`)) {
+                delete allData[month];
+                
+                // 如果删除的是当前选中的月份，选择第一个月份
+                if (currentMonth === month) {
+                    const months = Object.keys(allData);
+                    currentMonth = months.length > 0 ? months[0] : null;
+                }
+                
+                // 更新数据表格
+                initializeDataTable();
+                
+                // 更新图表
+                updateCharts();
+                
+                showNotification(`已成功删除${month}数据`, 'success');
+            }
+        }
+        
+        // 更新KPI指标
+        function updateKPIs() {
+            const months = Object.keys(allData);
+            
+            if (months.length === 0) {
+                document.getElementById('totalComplaints').textContent = '0';
+                document.getElementById('totalBoxes').textContent = '0';
+                document.getElementById('topCategory').textContent = '-';
+                document.getElementById('categoryPercentage').textContent = '0%';
+                document.getElementById('improvementRate').textContent = '0%';
+                return;
+            }
+            
+            // 计算总投诉次数和盒数
+            let totalComplaints = 0;
+            let totalBoxes = 0;
+            
+            for (const month in allData) {
+                totalComplaints += allData[month].times.reduce((a, b) => a + b, 0);
+                totalBoxes += allData[month].boxes.reduce((a, b) => a + b, 0);
+            }
+            
+            document.getElementById('totalComplaints').textContent = totalComplaints;
+            document.getElementById('totalBoxes').textContent = totalBoxes;
+            
+            // 计算趋势（与上月比较）
+            if (months.length >= 2) {
+                const latestMonth = months[months.length - 1];
+                const prevMonth = months[months.length - 2];
+                
+                const latestComplaints = allData[latestMonth].times.reduce((a, b) => a + b, 0);
+                const prevComplaints = allData[prevMonth].times.reduce((a, b) => a + b, 0);
+                
+                const latestBoxes = allData[latestMonth].boxes.reduce((a, b) => a + b, 0);
+                const prevBoxes = allData[prevMonth].boxes.reduce((a, b) => a + b, 0);
+                
+                const complaintsChange = ((latestComplaints - prevComplaints) / prevComplaints * 100).toFixed(1);
+                const boxesChange = ((latestBoxes - prevBoxes) / prevBoxes * 100).toFixed(1);
+                
+                document.getElementById('complaintsTrend').textContent = `${complaintsChange >= 0 ? '+' : ''}${complaintsChange}%`;
+                document.getElementById('complaintsTrend').className = complaintsChange >= 0 ? 'trend-up' : 'trend-down';
+                
+                document.getElementById('boxesTrend').textContent = `${boxesChange >= 0 ? '+' : ''}${boxesChange}%`;
+                document.getElementById('boxesTrend').className = boxesChange >= 0 ? 'trend-up' : 'trend-down';
+            }
+            
+            // 计算主要问题类别
+            let categoryTotals = new Array(categoryNames.length).fill(0);
+            
+            for (const month in allData) {
+                for (let i = 0; i < categoryNames.length; i++) {
+                    categoryTotals[i] += allData[month].times[i];
+                }
+            }
+            
+            const maxIndex = categoryTotals.indexOf(Math.max(...categoryTotals));
+            const maxValue = categoryTotals[maxIndex];
+            const maxPercentage = ((maxValue / totalComplaints) * 100).toFixed(1);
+            
+            document.getElementById('topCategory').textContent = categoryNames[maxIndex];
+            document.getElementById('categoryPercentage').textContent = `${maxPercentage}%`;
+            
+            // 计算问题改善率
+            if (months.length >= 2) {
+                const latestMonth = months[months.length - 1];
+                const prevMonth = months[months.length - 2];
+                
+                let improvedCategories = 0;
+                let totalCategories = 0;
+                
+                for (let i = 0; i < categoryNames.length; i++) {
+                    if (allData[prevMonth].times[i] > 0) {
+                        totalCategories++;
+                        if (allData[latestMonth].times[i] < allData[prevMonth].times[i]) {
+                            improvedCategories++;
+                        }
+                    }
+                }
+                
+                const improvementRate = totalCategories > 0 ? ((improvedCategories / totalCategories) * 100).toFixed(1) : 0;
+                document.getElementById('improvementRate').textContent = `${improvementRate}%`;
+            }
+        }
+        
+        // 更新图表
+        function updateCharts() {
+            // 显示加载指示器
+            showLoader(true);
+            
+            // 更新KPI指标
+            updateKPIs();
+            
+            // 更新趋势图
+            updateTrendChart();
+            
+            // 更新类别对比图
+            updateCategoryChart();
+            
+            // 更新月度分析
+            updateMonthlyAnalysis();
+            
+            // 更新数据表格
+            updateDataTable();
+            
+            // 更新洞察与建议
+            updateInsights();
+            
+            // 隐藏加载指示器
+            setTimeout(() => {
+                showLoader(false);
+            }, 500);
+        }
+        
+        // 更新趋势图
+        function updateTrendChart() {
+            const months = Object.keys(allData);
+            const dataType = document.getElementById('trendDataType').value;
+            const chartType = document.getElementById('trendChartType').value;
+            
+            // 准备数据
+            const datasets = categoryNames.map((category, index) => {
+                return {
+                    label: category,
+                    data: months.map(month => allData[month][dataType][index]),
+                    backgroundColor: categoryColors[index] + '80',
+                    borderColor: categoryColors[index],
+                    borderWidth: 2,
+                    fill: chartType === 'line'
+                };
+            });
+            
+            // 销毁现有图表
+            if (chartInstances.trendChart) {
+                chartInstances.trendChart.destroy();
+            }
+            
+            // 创建图表
+            const trendChartCtx = document.getElementById('trendChart').getContext('2d');
+            chartInstances.trendChart = new Chart(trendChartCtx, {
+                type: chartType,
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `月度投诉${dataType === 'times' ? '次数' : '盒数'}趋势`,
+                            font: { size: 16 }
+                        },
+                        legend: { 
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: dataType === 'times' ? '问题发生次数' : '问题盒数'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
+                    }
+                }
+            });
+        }
+        
+        // 更新类别对比图
+        function updateCategoryChart() {
+            const months = Object.keys(allData);
+            
+            if (months.length === 0) return;
+            
+            // 计算各类别在所有月份中的总和
+            const timesTotals = new Array(categoryNames.length).fill(0);
+            const boxesTotals = new Array(categoryNames.length).fill(0);
+            
+            for (const month in allData) {
+                for (let i = 0; i < categoryNames.length; i++) {
+                    timesTotals[i] += allData[month].times[i];
+                    boxesTotals[i] += allData[month].boxes[i];
+                }
+            }
+            
+            // 销毁现有图表
+            if (chartInstances.categoryChart) {
+                chartInstances.categoryChart.destroy();
+            }
+            
+            // 创建图表
+            const categoryChartCtx = document.getElementById('categoryChart').getContext('2d');
+            chartInstances.categoryChart = new Chart(categoryChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: categoryNames,
+                    datasets: [
+                        {
+                            label: '总次数',
+                            data: timesTotals,
+                            backgroundColor: categoryColors.map(color => color + '80'),
+                            borderColor: categoryColors,
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '总盒数',
+                            data: boxesTotals,
+                            backgroundColor: categoryColors.map(color => color + '40'),
+                            borderColor: categoryColors,
+                            borderWidth: 1,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '投诉类别对比分析',
+                            font: { size: 16 }
+                        },
+                        legend: { 
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '问题类别'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: '问题发生次数'
+                            },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '问题盒数'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新月度分析
+        function updateMonthlyAnalysis() {
+            const monthlyAnalysisContainer = document.getElementById('monthlyAnalysisContainer');
+            const noDataMessage = document.getElementById('noDataMessage');
+            
+            const months = Object.keys(allData);
+            
+            if (months.length === 0) {
+                noDataMessage.style.display = 'block';
+                monthlyAnalysisContainer.innerHTML = '';
+                monthlyAnalysisContainer.appendChild(noDataMessage);
+                return;
+            }
+            
+            noDataMessage.style.display = 'none';
+            
+            // 清空容器
+            monthlyAnalysisContainer.innerHTML = '';
+            
+            // 为每个月份创建分析卡片
+            months.forEach(month => {
+                const monthAnalysisCard = createMonthAnalysisCard(month);
+                monthlyAnalysisContainer.appendChild(monthAnalysisCard);
+                
+                // 创建图表
+                setTimeout(() => {
+                    createDonutCharts(month);
+                    createParetoCharts(month);
+                }, 100);
+            });
+        }
+        
+        // 创建月度分析卡片
+        function createMonthAnalysisCard(month) {
+            const card = document.createElement('div');
+            card.className = 'month-analysis-card';
+            card.id = `analysis-${month.replace(/\s+/g, '')}`;
+            
+            const totalTimes = allData[month].times.reduce((a, b) => a + b, 0);
+            const totalBoxes = allData[month].boxes.reduce((a, b) => a + b, 0);
+            
+            card.innerHTML = `
+                <div class="month-analysis-header">
+                    <div class="month-analysis-title">${month}投诉分析</div>
+                    <div class="month-summary">
+                        <span><i class="fas fa-chart-bar"></i> 总次数: ${totalTimes}</span>
+                        <span><i class="fas fa-box"></i> 总盒数: ${totalBoxes}</span>
+                        <span><i class="fas fa-exclamation-triangle"></i> 问题类别: ${allData[month].times.filter(v => v > 0).length}</span>
+                    </div>
+                </div>
+                <div class="analysis-tabs">
+                    <button class="analysis-tab active" data-tab="donut-${month.replace(/\s+/g, '')}">
+                        <i class="fas fa-chart-pie"></i> 环形图分布
+                    </button>
+                    <button class="analysis-tab" data-tab="pareto-times-${month.replace(/\s+/g, '')}">
+                        <i class="fas fa-chart-line"></i> 次数柏拉图
+                    </button>
+                    <button class="analysis-tab" data-tab="pareto-boxes-${month.replace(/\s+/g, '')}">
+                        <i class="fas fa-chart-line"></i> 盒数柏拉图
+                    </button>
+                    <button class="analysis-tab" data-tab="details-${month.replace(/\s+/g, '')}">
+                        <i class="fas fa-table"></i> 详细数据
+                    </button>
+                </div>
+                <div class="tab-content active" id="donut-${month.replace(/\s+/g, '')}">
+                    <div class="donut-container">
+                        <div class="donut-item">
+                            <div class="donut-chart-container">
+                                <canvas id="${month.replace(/\s+/g, '')}TimesDonut"></canvas>
+                            </div>
+                            <div class="donut-label">次数分布（总次数：${totalTimes}次）</div>
+                        </div>
+                        <div class="donut-item">
+                            <div class="donut-chart-container">
+                                <canvas id="${month.replace(/\s+/g, '')}BoxesDonut"></canvas>
+                            </div>
+                            <div class="donut-label">盒数分布（总盒数：${totalBoxes}盒）</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content" id="pareto-times-${month.replace(/\s+/g, '')}">
+                    <div class="pareto-chart-container">
+                        <canvas id="${month.replace(/\s+/g, '')}TimesPareto"></canvas>
+                    </div>
+                    <div class="pareto-legend">
+                        <div class="pareto-legend-item"><span class="pareto-bar"></span>问题次数</div>
+                        <div class="pareto-legend-item"><span class="pareto-line"></span>累计百分比</div>
+                    </div>
+                </div>
+                <div class="tab-content" id="pareto-boxes-${month.replace(/\s+/g, '')}">
+                    <div class="pareto-chart-container">
+                        <canvas id="${month.replace(/\s+/g, '')}BoxesPareto"></canvas>
+                    </div>
+                    <div class="pareto-legend">
+                        <div class="pareto-legend-item"><span class="pareto-bar"></span>问题盒数</div>
+                        <div class="pareto-legend-item"><span class="pareto-line"></span>累计百分比</div>
+                    </div>
+                </div>
+                <div class="tab-content" id="details-${month.replace(/\s+/g, '')}">
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                            <thead>
+                                <tr style="background-color: #f1f5f9;">
+                                    <th style="padding: 10px; border: 1px solid #ddd;">问题类别</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">次数</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">盒数</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">次数占比</th>
+                                    <th style="padding: 10px; border: 1px solid #ddd;">盒数占比</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${categoryNames.map((name, index) => {
+                                    const times = allData[month].times[index];
+                                    const boxes = allData[month].boxes[index];
+                                    const timesPercentage = totalTimes > 0 ? ((times / totalTimes) * 100).toFixed(1) : 0;
+                                    const boxesPercentage = totalBoxes > 0 ? ((boxes / totalBoxes) * 100).toFixed(1) : 0;
+                                    
+                                    return `
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #ddd;">${name}</td>
+                                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${times}</td>
+                                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${boxes}</td>
+                                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${timesPercentage}%</td>
+                                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${boxesPercentage}%</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            // 添加标签页切换功能
+            const tabs = card.querySelectorAll('.analysis-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 移除所有标签的active类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // 隐藏所有内容
+                    card.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // 激活当前标签和内容
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            return card;
+        }
+        
+        // 创建环形图
+        function createDonutCharts(month) {
+            // 次数环形图
+            const timesData = allData[month].times;
+            const timesTotal = timesData.reduce((a, b) => a + b, 0);
+            
+            if (timesTotal === 0) return;
+            
+            const timesDonutCtx = document.getElementById(`${month.replace(/\s+/g, '')}TimesDonut`).getContext('2d');
+            
+            // 销毁现有图表
+            if (chartInstances.donutCharts[`${month}Times`]) {
+                chartInstances.donutCharts[`${month}Times`].destroy();
+            }
+            
+            chartInstances.donutCharts[`${month}Times`] = new Chart(timesDonutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryNames,
+                    datasets: [{
+                        data: timesData,
+                        backgroundColor: categoryColors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const percentage = ((context.raw / timesTotal) * 100).toFixed(1);
+                                    return `${context.label}: ${context.raw}次 (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 盒数环形图
+            const boxesData = allData[month].boxes;
+            const boxesTotal = boxesData.reduce((a, b) => a + b, 0);
+            
+            if (boxesTotal === 0) return;
+            
+            const boxesDonutCtx = document.getElementById(`${month.replace(/\s+/g, '')}BoxesDonut`).getContext('2d');
+            
+            // 销毁现有图表
+            if (chartInstances.donutCharts[`${month}Boxes`]) {
+                chartInstances.donutCharts[`${month}Boxes`].destroy();
+            }
+            
+            chartInstances.donutCharts[`${month}Boxes`] = new Chart(boxesDonutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryNames,
+                    datasets: [{
+                        data: boxesData,
+                        backgroundColor: categoryColors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const percentage = ((context.raw / boxesTotal) * 100).toFixed(1);
+                                    return `${context.label}: ${context.raw}盒 (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 创建柏拉图
+        function createParetoCharts(month) {
+            createParetoChart(month, 'times', '次数');
+            createParetoChart(month, 'boxes', '盒数');
+        }
+        
+        // 创建柏拉图图表
+        function createParetoChart(month, dataType, labelText) {
+            const data = allData[month][dataType];
+            const total = data.reduce((a, b) => a + b, 0);
+            
+            if (total === 0) return;
+            
+            // 创建数据对象数组，包含类别名称和值
+            let dataItems = [];
+            for (let i = 0; i < categoryNames.length; i++) {
+                if (data[i] > 0) {
+                    dataItems.push({
+                        name: categoryNames[i],
+                        value: data[i],
+                        color: categoryColors[i]
+                    });
+                }
+            }
+            
+            // 按值降序排序
+            dataItems.sort((a, b) => b.value - a.value);
+            
+            // 计算累计值和累计百分比
+            let cumulativeValue = 0;
+            const paretoData = dataItems.map(item => {
+                cumulativeValue += item.value;
+                return {
+                    name: item.name,
+                    value: item.value,
+                    cumulative: cumulativeValue,
+                    percentage: (cumulativeValue / total) * 100,
+                    color: item.color
+                };
+            });
+            
+            // 准备图表数据
+            const labels = paretoData.map(item => item.name);
+            const values = paretoData.map(item => item.value);
+            const percentages = paretoData.map(item => item.percentage);
+            
+            // 获取画布上下文
+            const ctx = document.getElementById(`${month.replace(/\s+/g, '')}${dataType === 'times' ? 'Times' : 'Boxes'}Pareto`).getContext('2d');
+            
+            // 销毁现有图表
+            if (chartInstances.paretoCharts[`${month}${dataType}`]) {
+                chartInstances.paretoCharts[`${month}${dataType}`].destroy();
+            }
+            
+            // 创建柏拉图图表
+            chartInstances.paretoCharts[`${month}${dataType}`] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: `问题${labelText}`,
+                            data: values,
+                            backgroundColor: paretoData.map(item => item.color + '80'),
+                            borderColor: paretoData.map(item => item.color),
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '累计百分比',
+                            data: percentages,
+                            type: 'line',
+                            borderColor: '#dc3545',
+                            backgroundColor: 'transparent',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#dc3545',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${month}问题${labelText}柏拉图`,
+                            font: { size: 16 }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        return `${context.label}: ${context.raw}${dataType === 'times' ? '次' : '盒'}`;
+                                    } else {
+                                        return `累计百分比: ${context.raw.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                line80: {
+                                    type: 'line',
+                                    yMin: 80,
+                                    yMax: 80,
+                                    borderColor: '#dc3545',
+                                    borderWidth: 2,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        content: '80%',
+                                        enabled: true,
+                                        position: 'end'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '问题类别'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: `问题${labelText}`
+                            },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: '累计百分比 (%)'
+                            },
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 更新数据表格
+        function updateDataTable() {
+            const dataTableBody = document.getElementById('dataTableBody');
+            dataTableBody.innerHTML = '';
+            
+            const months = Object.keys(allData);
+            
+            months.forEach(month => {
+                // 次数行
+                const timesRow = document.createElement('tr');
+                const timesData = allData[month].times;
+                const timesTotal = timesData.reduce((a, b) => a + b, 0);
+                
+                timesRow.innerHTML = `
+                    <td rowspan="2">${month}</td>
+                    <td>次数</td>
+                    ${timesData.map((value, index) => {
+                        // 检查是否有显著变化
+                        let className = '';
+                        if (month !== months[0]) {
+                            const prevMonth = months[months.indexOf(month) - 1];
+                            if (prevMonth && allData[prevMonth]) {
+                                const prevValue = allData[prevMonth].times[index];
+                                if (value > prevValue * 1.5) {
+                                    className = 'highlight-warning';
+                                } else if (value === 0 && prevValue > 0) {
+                                    className = 'highlight-improvement';
+                                }
+                            }
+                        }
+                        return `<td class="${className}">${value}</td>`;
+                    }).join('')}
+                    <td><strong>${timesTotal}</strong></td>
+                `;
+                dataTableBody.appendChild(timesRow);
+                
+                // 盒数行
+                const boxesRow = document.createElement('tr');
+                const boxesData = allData[month].boxes;
+                const boxesTotal = boxesData.reduce((a, b) => a + b, 0);
+                
+                boxesRow.innerHTML = `
+                    <td>盒数</td>
+                    ${boxesData.map((value, index) => {
+                        // 检查是否有显著变化
+                        let className = '';
+                        if (month !== months[0]) {
+                            const prevMonth = months[months.indexOf(month) - 1];
+                            if (prevMonth && allData[prevMonth]) {
+                                const prevValue = allData[prevMonth].boxes[index];
+                                if (value > prevValue * 1.5) {
+                                    className = 'highlight-warning';
+                                } else if (value === 0 && prevValue > 0) {
+                                    className = 'highlight-improvement';
+                                }
+                            }
+                        }
+                        return `<td class="${className}">${value}</td>`;
+                    }).join('')}
+                    <td><strong>${boxesTotal}</strong></td>
+                `;
+                dataTableBody.appendChild(boxesRow);
+            });
+        }
+        
+        // 更新洞察与建议
+        function updateInsights() {
+            const insightsList = document.getElementById('insightsList');
+            const recommendationsList = document.getElementById('recommendationsList');
+            
+            insightsList.innerHTML = '';
+            recommendationsList.innerHTML = '';
+            
+            const months = Object.keys(allData);
+            
+            if (months.length === 0) {
+                insightsList.innerHTML = '<li>暂无数据，请添加月份数据以进行分析</li>';
+                recommendationsList.innerHTML = '<li>添加数据后，系统将自动生成改进建议</li>';
+                return;
+            }
+            
+            const latestMonth = months[months.length - 1];
+            const prevMonth = months.length >= 2 ? months[months.length - 2] : null;
+            
+            const latestTimes = allData[latestMonth].times;
+            const latestBoxes = allData[latestMonth].boxes;
+            const prevTimes = prevMonth ? allData[prevMonth].times : null;
+            
+            // 计算总次数和盒数
+            const totalLatestTimes = latestTimes.reduce((a, b) => a + b, 0);
+            const totalLatestBoxes = latestBoxes.reduce((a, b) => a + b, 0);
+            const totalPrevTimes = prevTimes ? prevTimes.reduce((a, b) => a + b, 0) : 0;
+            
+            // 生成洞察
+            const insights = [];
+            const recommendations = [];
+            
+            // 总体趋势洞察
+            if (prevMonth) {
+                if (totalLatestTimes > totalPrevTimes) {
+                    const increase = totalLatestTimes - totalPrevTimes;
+                    const increasePercent = ((increase / totalPrevTimes) * 100).toFixed(1);
+                    insights.push(`<li><strong>总体投诉次数上升</strong>：${latestMonth}总投诉次数为${totalLatestTimes}次，较${prevMonth}增加了${increase}次（${increasePercent}%），需关注整体质量趋势。</li>`);
+                    recommendations.push(`<li><strong>启动根本原因分析</strong>：针对投诉次数上升的问题，应立即启动跨部门根本原因分析，识别系统性质量问题。</li>`);
+                } else if (totalLatestTimes < totalPrevTimes) {
+                    const decrease = totalPrevTimes - totalLatestTimes;
+                    const decreasePercent = ((decrease / totalPrevTimes) * 100).toFixed(1);
+                    insights.push(`<li><strong>总体投诉次数下降</strong>：${latestMonth}总投诉次数为${totalLatestTimes}次，较${prevMonth}减少了${decrease}次（${decreasePercent}%），质量改进措施初见成效。</li>`);
+                    recommendations.push(`<li><strong>巩固改进成果</strong>：继续保持有效的质量改进措施，并将成功经验标准化，推广到其他产品线。</li>`);
+                }
+            }
+            
+            // 柏拉图分析洞察
+            if (totalLatestTimes > 0) {
+                // 找出累计占比80%的关键问题
+                const sortedData = latestTimes.map((value, index) => ({ name: categoryNames[index], value }))
+                    .sort((a, b) => b.value - a.value);
+                
+                let cumulative = 0;
+                const criticalCategories = [];
+                
+                for (const item of sortedData) {
+                    cumulative += item.value;
+                    criticalCategories.push(item.name);
+                    if (cumulative / totalLatestTimes >= 0.8) break;
+                }
+                
+                if (criticalCategories.length > 0) {
+                    insights.push(`<li><strong>关键问题识别</strong>：${latestMonth}中，${criticalCategories.join('、')}等${criticalCategories.length}类问题占投诉总数的80%，是质量改进的重点。</li>`);
+                    recommendations.push(`<li><strong>聚焦关键问题</strong>：将资源优先投入到解决${criticalCategories.join('、')}等关键问题上，实施针对性的改进措施。</li>`);
+                }
+            }
+            
+            // 识别改善的问题
+            if (prevMonth) {
+                const improvedCategories = [];
+                for (let i = 0; i < categoryNames.length; i++) {
+                    if (latestTimes[i] === 0 && prevTimes[i] > 0) {
+                        improvedCategories.push(categoryNames[i]);
+                    }
+                }
+                
+                if (improvedCategories.length > 0) {
+                    insights.push(`<li><strong>问题改善显著</strong>：${latestMonth}中${improvedCategories.join('、')}问题已完全消除，相关改进措施效果明显。</li>`);
+                    recommendations.push(`<li><strong>推广成功经验</strong>：总结${improvedCategories.join('、')}问题的改进经验，形成标准化操作流程，推广到其他问题类别。</li>`);
+                }
+            }
+            
+            // 识别恶化的问题
+            if (prevMonth) {
+                const worsenedCategories = [];
+                for (let i = 0; i < categoryNames.length; i++) {
+                    if (latestTimes[i] > prevTimes[i] * 1.5 && prevTimes[i] > 0) {
+                        worsenedCategories.push(categoryNames[i]);
+                    }
+                }
+                
+                if (worsenedCategories.length > 0) {
+                    insights.push(`<li><strong>问题恶化需关注</strong>：${latestMonth}中${worsenedCategories.join('、')}问题显著增加，需要立即调查原因并采取纠正措施。</li>`);
+                    recommendations.push(`<li><strong>紧急应对措施</strong>：针对${worsenedCategories.join('、')}等恶化问题，立即成立专项小组，制定紧急应对方案。</li>`);
+                }
+            }
+            
+            // 找出最严重的问题
+            const maxIndex = latestTimes.indexOf(Math.max(...latestTimes));
+            if (latestTimes[maxIndex] > 0) {
+                const percentage = ((latestTimes[maxIndex] / totalLatestTimes) * 100).toFixed(1);
+                insights.push(`<li><strong>最主要问题</strong>：${categoryNames[maxIndex]}是${latestMonth}最主要的问题，占投诉总数的${percentage}%，需要优先解决。</li>`);
+                recommendations.push(`<li><strong>专项改进计划</strong>：针对${categoryNames[maxIndex]}问题制定专项改进计划，明确责任人和完成时限。</li>`);
+            }
+            
+            // 通用建议
+            recommendations.push(`<li><strong>数据持续监控</strong>：建立定期监控机制，持续跟踪关键质量指标的变化趋势。</li>`);
+            recommendations.push(`<li><strong>跨部门协作</strong>：加强生产、质量、物流等部门的协作，从源头预防质量问题发生。</li>`);
+            recommendations.push(`<li><strong>供应商管理</strong>：如问题与原材料相关，加强对供应商的质量管理和评估。</li>`);
+            
+            insightsList.innerHTML = insights.length > 0 ? insights.join('') : '<li>数据量较少，请添加更多月份数据以获得更准确的洞察。</li>';
+            recommendationsList.innerHTML = recommendations.join('');
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 更新图表按钮
+            document.getElementById('updateChartsBtn').addEventListener('click', updateCharts);
+            
+            // 趋势图表类型切换
+            document.getElementById('trendDataType').addEventListener('change', updateTrendChart);
+            document.getElementById('trendChartType').addEventListener('change', updateTrendChart);
+            
+            // 重置数据按钮
+            document.getElementById('resetDataBtn').addEventListener('click', function() {
+                if (confirm('确定要重置为示例数据吗？当前所有数据将被覆盖。')) {
+                    allData = {
+                        "10月份": {
+                            times: [3, 2, 2, 1, 2, 3],
+                            boxes: [6, 6, 2, 1, 2, 7]
+                        },
+                        "11月份": {
+                            times: [6, 5, 3, 0, 0, 0],
+                            boxes: [22, 11, 7, 0, 0, 0]
+                        }
+                    };
+                    
+                    initializeDataTable();
+                    updateCharts();
+                    
+                    showNotification('已重置为示例数据', 'success');
+                }
+            });
+            
+            // 导入数据按钮
+            document.getElementById('importDataBtn').addEventListener('click', function() {
+                document.getElementById('importModal').style.display = 'flex';
+            });
+            
+            // 关闭导入模态框
+            document.getElementById('closeImportModal').addEventListener('click', function() {
+                document.getElementById('importModal').style.display = 'none';
+            });
+            
+            document.getElementById('cancelImportBtn').addEventListener('click', function() {
+                document.getElementById('importModal').style.display = 'none';
+            });
+            
+            // 确认导入数据
+            document.getElementById('confirmImportBtn').addEventListener('click', function() {
+                const jsonData = document.getElementById('jsonData').value;
+                
+                try {
+                    const parsedData = JSON.parse(jsonData);
+                    
+                    // 验证数据结构
+                    let isValid = true;
+                    for (const month in parsedData) {
+                        if (!parsedData[month].times || !parsedData[month].boxes || 
+                            !Array.isArray(parsedData[month].times) || !Array.isArray(parsedData[month].boxes) ||
+                            parsedData[month].times.length !== 6 || parsedData[month].boxes.length !== 6) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isValid) {
+                        // 合并数据（不覆盖现有数据）
+                        for (const month in parsedData) {
+                            allData[month] = parsedData[month];
+                        }
+                        
+                        initializeDataTable();
+                        updateCharts();
+                        
+                        document.getElementById('importModal').style.display = 'none';
+                        showNotification('数据导入成功', 'success');
+                    } else {
+                        showNotification('数据格式不正确，请检查JSON结构', 'warning');
+                    }
+                } catch (error) {
+                    showNotification('JSON解析错误，请检查格式', 'warning');
+                }
+            });
+            
+            // 导出报告按钮
+            document.getElementById('exportReportBtn').addEventListener('click', function() {
+                exportReport();
+            });
+            
+            // 导出表格按钮
+            document.getElementById('exportTableBtn').addEventListener('click', function() {
+                exportTableToExcel();
+            });
+            
+            // 帮助按钮
+            document.getElementById('helpBtn').addEventListener('click', function() {
+                document.getElementById('helpModal').style.display = 'flex';
+            });
+            
+            document.getElementById('closeHelpModal').addEventListener('click', function() {
+                document.getElementById('helpModal').style.display = 'none';
+            });
+            
+            document.getElementById('closeHelpBtn').addEventListener('click', function() {
+                document.getElementById('helpModal').style.display = 'none';
+            });
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', function(event) {
+                const importModal = document.getElementById('importModal');
+                const helpModal = document.getElementById('helpModal');
+                
+                if (event.target === importModal) {
+                    importModal.style.display = 'none';
+                }
+                
+                if (event.target === helpModal) {
+                    helpModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 3000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease-out;
+                max-width: 350px;
+            `;
+            
+            // 设置颜色基于类型
+            if (type === 'success') {
+                notification.style.backgroundColor = '#28a745';
+            } else if (type === 'warning') {
+                notification.style.backgroundColor = '#ffc107';
+                notification.style.color = '#212529';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = '#dc3545';
+            } else {
+                notification.style.backgroundColor = '#17a2b8';
+            }
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后移除通知
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+            
+            // 添加CSS动画
+            if (!document.getElementById('notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // 显示/隐藏加载指示器
+        function showLoader(show) {
+            const loader = document.getElementById('loader');
+            loader.style.display = show ? 'block' : 'none';
+        }
+        
+        // 导出报告
+        function exportReport() {
+            showLoader(true);
+            
+            // 模拟导出过程
+            setTimeout(() => {
+                // 创建报告内容
+                const reportDate = new Date().toLocaleDateString('zh-CN');
+                const months = Object.keys(allData);
+                const latestMonth = months[months.length - 1];
+                
+                let reportContent = `投诉质量分析报告\n`;
+                reportContent += `生成日期: ${reportDate}\n`;
+                reportContent += `数据范围: ${months.join(', ')}\n\n`;
+                reportContent += `=== KPI指标 ===\n`;
+                reportContent += `总投诉次数: ${document.getElementById('totalComplaints').textContent}\n`;
+                reportContent += `总问题盒数: ${document.getElementById('totalBoxes').textContent}\n`;
+                reportContent += `主要问题类别: ${document.getElementById('topCategory').textContent}\n\n`;
+                reportContent += `=== 关键洞察 ===\n`;
+                
+                const insights = document.querySelectorAll('#insightsList li');
+                insights.forEach((insight, index) => {
+                    reportContent += `${index + 1}. ${insight.textContent}\n`;
+                });
+                
+                reportContent += `\n=== 改进建议 ===\n`;
+                
+                const recommendations = document.querySelectorAll('#recommendationsList li');
+                recommendations.forEach((recommendation, index) => {
+                    reportContent += `${index + 1}. ${recommendation.textContent}\n`;
+                });
+                
+                // 创建下载链接
+                const blob = new Blob([reportContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `投诉质量分析报告_${reportDate}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showLoader(false);
+                showNotification('报告导出成功', 'success');
+            }, 1000);
+        }
+        
+        // 导出表格为Excel
+        function exportTableToExcel() {
+            showLoader(true);
+            
+            // 模拟导出过程
+            setTimeout(() => {
+                // 获取表格数据
+                const months = Object.keys(allData);
+                let csvContent = "月份,类型,标签脱落,挤压变形,发酸发黑胀气,异物,封口不良,少盒数,总计\n";
+                
+                months.forEach(month => {
+                    const timesData = allData[month].times;
+                    const boxesData = allData[month].boxes;
+                    const timesTotal = timesData.reduce((a, b) => a + b, 0);
+                    const boxesTotal = boxesData.reduce((a, b) => a + b, 0);
+                    
+                    // 次数行
+                    csvContent += `${month},次数,${timesData.join(",")},${timesTotal}\n`;
+                    // 盒数行
+                    csvContent += `${month},盒数,${boxesData.join(",")},${boxesTotal}\n`;
+                });
+                
+                // 创建下载链接
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `投诉数据_${new Date().toISOString().slice(0, 10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showLoader(false);
+                showNotification('表格导出成功', 'success');
+            }, 800);
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', initializePage);
+    </script>
+</body>
+</html>
